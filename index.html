@@ -85,6 +85,21 @@
     background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.14);
     padding:6px 12px; border-radius:999px; font-size:12.5px; color:#DCE3E5;
   }
+  .admin-btn{
+    background:rgba(214,162,58,.16); border:1px solid rgba(214,162,58,.55);
+    padding:6px 14px; border-radius:999px; font-size:12.5px; color:#F0D9A6;
+    cursor:pointer; font-family:var(--font-en); transition:background .15s;
+  }
+  .admin-btn:hover{background:rgba(214,162,58,.32);}
+
+  body:not(.admin-mode) .table-toolbar{display:none;}
+  body:not(.admin-mode) .act-cell{display:none;}
+  body:not(.admin-mode) th.col-actions{display:none;}
+
+  .admin-hint{display:none; color:var(--gold-deep); font-weight:600;}
+  body.admin-mode .admin-hint{display:inline;}
+  body.admin-mode .snap-card .sr-school{cursor:pointer; text-decoration:underline dotted var(--gold);}
+  body.admin-mode .snap-card .sr-school:hover{color:var(--gold-deep);}
 
   .seal-wrap{ position:relative; z-index:1; flex-shrink:0;}
   .seal{
@@ -324,6 +339,7 @@
         <span id="metaClusters">— ಕ್ಲಸ್ಟರ್‌ಗಳು</span>
         <span>ತಾಲ್ಲೂಕು: ದೇವದುರ್ಗ</span>
         <span id="metaDate">ವರದಿ ದಿನಾಂಕ —</span>
+        <button id="btnAdmin" class="admin-btn" type="button">🔐 Admin Login</button>
       </div>
     </div>
     <div class="seal-wrap">
@@ -406,7 +422,7 @@
 
   <section class="section" id="sec-reasons">
     <div class="section-head"><h2>ವ್ಯತ್ಯಾಸಕ್ಕೆ ಕಾರಣಗಳು <span class="num" id="reasonReportedTag">334 / 342 ಶಾಲೆಗಳಿಂದ ವರದಿ</span></h2></div>
-    <p class="section-desc">ಎಲ್ಲಾ ಶಾಲೆಗಳು ಸಲ್ಲಿಸಿದ ಕಾರಣಗಳ ವರ್ಗೀಕರಣ, ಹಾಗೂ ಪ್ರತಿ ಕ್ಲಸ್ಟರ್‌ನಿಂದ 1–2 ನಿರ್ದಿಷ್ಟ ಉದಾಹರಣೆಗಳು (ಅತಿ ಹೆಚ್ಚು ವ್ಯತ್ಯಾಸ ಇರುವ ಶಾಲೆಗಳಿಂದ).</p>
+    <p class="section-desc">ಎಲ್ಲಾ ಶಾಲೆಗಳು ಸಲ್ಲಿಸಿದ ಕಾರಣಗಳ ವರ್ಗೀಕರಣ, ಹಾಗೂ ಪ್ರತಿ ಕ್ಲಸ್ಟರ್‌ನಿಂದ 1–2 ನಿರ್ದಿಷ್ಟ ಉದಾಹರಣೆಗಳು (ಅತಿ ಹೆಚ್ಚು ವ್ಯತ್ಯಾಸ ಇರುವ ಶಾಲೆಗಳಿಂದ).<span class="admin-hint"> ✎ ಅಡ್ಮಿನ್: ಶಾಲೆಯ ಹೆಸರನ್ನು ಒತ್ತಿ ಕಾರಣ ಎಡಿಟ್ ಮಾಡಿ</span></p>
     <div class="two-col">
       <div class="panel">
         <ul class="reason-list" id="reasonList"></ul>
@@ -439,7 +455,7 @@
             <th data-key="nirantara_total">ನಿರಂತರ ಒಟ್ಟು</th>
             <th data-key="diff_total">ವ್ಯತ್ಯಾಸ</th>
             <th data-key="percent">%</th>
-            <th style="width:66px;">ಕ್ರಿಯೆ</th>
+            <th class="col-actions" style="width:66px;">ಕ್ರಿಯೆ</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -769,7 +785,7 @@
     const card = document.createElement('div');
     card.className = 'snap-card ' + rc;
     const reasonsHtml = (c.top_reasons||[]).map(r=>`
-      <li><span class="sr-school">${r.school}</span>${r.reason}</li>
+      <li><span class="sr-school" data-school="${r.school}">${r.school}</span>${r.reason}</li>
     `).join('') || '<li>ನಿರ್ದಿಷ್ಟ ಕಾರಣ ವರದಿಯಾಗಿಲ್ಲ</li>';
     card.innerHTML = `
       <div class="snap-top">
@@ -786,6 +802,12 @@
     snapGrid.appendChild(card);
     });
   }
+  document.getElementById('clusterSnapGrid').addEventListener('click', e=>{
+    const el = e.target.closest('.sr-school');
+    if(!el || !isAdmin()) return;
+    const rec = SCHOOLS.find(s=>s.school===el.dataset.school);
+    if(rec) openSchoolModal(rec);
+  });
 
   /* ---------- Filter bar setup ---------- */
   const clusterSel = document.getElementById('clusterSel');
@@ -1005,6 +1027,32 @@
     SCHOOLS = JSON.parse(JSON.stringify(ORIGINAL_SCHOOLS));
     renderAll();
   });
+
+  /* ---------- Admin mode ---------- */
+  const ADMIN_PASSWORD = 'devadurga2026';
+  const btnAdmin = document.getElementById('btnAdmin');
+  function isAdmin(){ return sessionStorage.getItem('nir_admin')==='1'; }
+  function applyAdminMode(){
+    document.body.classList.toggle('admin-mode', isAdmin());
+    btnAdmin.textContent = isAdmin() ? '🔓 Admin Mode · Logout' : '🔐 Admin Login';
+  }
+  btnAdmin.addEventListener('click', ()=>{
+    if(isAdmin()){
+      if(confirm('ಅಡ್ಮಿನ್ ಮೋಡ್‌ನಿಂದ ಲಾಗ್ ಔಟ್ ಆಗಬೇಕೆ?')){
+        sessionStorage.removeItem('nir_admin'); applyAdminMode();
+      }
+      return;
+    }
+    const pw = prompt('ಅಡ್ಮಿನ್ ಪಾಸ್‌ವರ್ಡ್ ನಮೂದಿಸಿ:');
+    if(pw===null) return;
+    if(pw===ADMIN_PASSWORD){
+      sessionStorage.setItem('nir_admin','1'); applyAdminMode();
+      alert('ಅಡ್ಮಿನ್ ಮೋಡ್ ಆನ್ ಆಯಿತು — ಹೊಸ ಶಾಲೆ / ಎಡಿಟ್ / ಡಿಲೀಟ್ ಬಟನ್‌ಗಳು ಕಾಣುತ್ತವೆ.');
+    }else{
+      alert('ತಪ್ಪು ಪಾಸ್‌ವರ್ಡ್! ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.');
+    }
+  });
+  applyAdminMode();
 
   /* ---------- Init ---------- */
   renderReasonPie();
