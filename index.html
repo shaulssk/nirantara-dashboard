@@ -383,7 +383,7 @@
       <option value="pct_asc">% (ಕಡಿಮೆಯಿಂದ)</option>
       <option value="pct_desc">% (ಹೆಚ್ಚಿನಿಂದ)</option>
       <option value="sats_desc">SATS ಒಟ್ಟು</option>
-      <option value="name_asc">ಶಾಲೆ ಹೆಸರು (A–Z)</option>
+      <option value="name_asc">ಶಾಲೆ ಹೆಸರು (A–Z)</option><option value="cluster_asc">ಕ್ಲಸ್ಟರ್ (A-Z)</option>
     </select>
   </div>
   <button class="btn-reset" id="resetBtn">ಫಿಲ್ಟರ್ ರೀಸೆಟ್</button>
@@ -617,7 +617,7 @@
   /* ---------- Custom SVG: Cluster horizontal grouped bar chart ---------- */
   function renderClusterChart(){
     const box = document.getElementById('clusterChartBox');
-    const clustersSorted = [...CLUSTERS].sort((a,b)=> b.diff - a.diff);
+    const clustersSorted = [...CLUSTERS].sort((a,b)=> a.localeCompare(b));
     const rowH = 30, groupGap = 6, barH = 7;
     const leftLabelW = 150, rightPad = 70, chartW = 900;
     const plotW = chartW - leftLabelW - rightPad;
@@ -780,7 +780,7 @@
   /* ---------- Cluster snapshot cards ---------- */
   function renderSnapshots(){
     const snapGrid = document.getElementById('clusterSnapGrid');
-    const clustersSortedForSnap = [...CLUSTERS].sort((a,b)=> b.diff - a.diff);
+    const clustersSortedForSnap = [...CLUSTERS].sort((a,b)=> a.localeCompare(b));
     snapGrid.innerHTML = '';
     clustersSortedForSnap.forEach(c=>{
     const rc = riskClass(c.percent);
